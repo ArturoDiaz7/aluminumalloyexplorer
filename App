@@ -1,9 +1,84 @@
-/** @jsxImportSource https://esm.sh/react */
-import Papa from "https://esm.sh/papaparse";
-import React, { useEffect, useMemo, useState } from "https://esm.sh/react";
-import { createRoot } from "https://esm.sh/react-dom/client";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluminum Alloy Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .alloy-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .alloy-table th, .alloy-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 40px;
+        }
+        .alloy-table th {
+            background-color: #f4f4f4;
+            text-align: center;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+        }
+        .not-found {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-size: 18px;
+        }
+        .column-aleacion { width: 100px; }
+        .column-al { width: 120px; }
+        .column-mg { width: 120px; }
+        .column-zn { width: 120px; }
+        .column-mn { width: 120px; }
+        .column-cu { width: 120px; }
+        .column-fe { width: 120px; }
+        .column-si { width: 120px; }
+        .column-ni { width: 120px; }
+    </style>
+</head>
+<body>
+    <h1 class="title">🔬 Aluminum Alloy Explorer</h1>
+    <input 
+        type="text" 
+        id="searchInput" 
+        class="search-input" 
+        placeholder="Search alloys (e.g. 1030, 99.30, max)"
+    >
+    <div id="resultContainer"></div>
 
-const CSV_DATA = `ALEACION,Al,Mg,Zn,Mn,Cu,Fe,Si,Ni
+    <script>
+        const CSV_DATA = \`ALEACION,Al,Mg,Zn,Mn,Cu,Fe,Si,Ni
 1030,99.30 min,0.05 max,0.10 max,0.05 max,0.10 max,0.60 max,0.35 max,
 1035,99.35 min,0.05 max,0.10 max,0.05 max,0.10 max,0.60 max,0.35 max,
 1040,99.40 min,0.05 max,0.10 max,0.05 max,0.10 max,0.05 max,0.30 max,
@@ -51,7 +126,8 @@ const CSV_DATA = `ALEACION,Al,Mg,Zn,Mn,Cu,Fe,Si,Ni
 2001,resto,0.20-0.45,0.10 max,0.15-0.50,5.2-6.0,0.20 max,0.20 max,
 2002,resto,0.50-1.0,0.20 max,0.20 max,1.5-2.5,0.30 max,0.35-0.8,
 2003,resto,0.02 max,0.10 max,0.30-0.8,4.0-5.0,0.30 max,0.30 max,
-2004,resto,0.05 max,0.10 max,0.10 max,5.5-6.5,"0.20 max,0.5 max",0.20 max,
+2004,resto,0.05 max,0.10 max,0.10 max,5.5-6.5,"0.20 max
+0.5 max",0.20 max,
 2005,resto,0.20-1.0,0.05 max,1.00 max,3.5-5.0,0.70 max,0.80 max,
 2006,resto,0.50-1.4,0.20 max,0.6-1.0,1.0-2.0,0.70 max,0.8-1.3, 
 2007,resto,0.40-1.8,0.80 max,0.50-1.0,3.3-4.6,0.80 max,0.80 max,
@@ -418,191 +494,89 @@ A393 2,resto,0.8-1.3,0.10 max,0.10 max,0.7-1.1,0.80 max,21.0-23.0,2.0-2.S
 8177,resto,0.1,0.04-0.12,0 04,0.25-0.45,,0.05,
 8211,resto,0.40-0.8,0.10 max,0.10 max,0.50-1.0,0.05-0.20,0.10 max,
 8276,resto,0.25 max,0.02 max,0.035 max,0.50-0.8,0.01 max,0.05 max,
-8280,resto,1.0-2.0,,0.7-1.3,0.70 max,,0.05 max,`;
+8280,resto,1.0-2.0,,0.7-1.3,0.70 max,,0.05 max,
+\`;
 
-function AluminumAlloySearch() {
-  const [alloys, setAlloys] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+        let alloys = [];
 
-  useEffect(() => {
-    const parsedData = Papa.parse(CSV_DATA, {
-      header: true,
-      skipEmptyLines: true,
-    });
-    setAlloys(parsedData.data);
-  }, []);
+        function initializeData() {
+            const parsedData = Papa.parse(CSV_DATA, {
+                header: true,
+                skipEmptyLines: true
+            });
+            alloys = parsedData.data;
+        }
 
-  const filteredAlloys = useMemo(() => {
-    if (!searchTerm) return []; // Start with no rows
+        function filterAlloys(searchTerm) {
+            if (!searchTerm) {
+                document.getElementById('resultContainer').innerHTML = '';
+                return;
+            }
 
-    return alloys.filter(alloy =>
-      Object.entries(alloy).some(([key, value]) => {
-        // Only match from the start of the value
-        const searchValue = searchTerm.toLowerCase();
-        const stringValue = (value || "").toString().toLowerCase();
+            const filteredAlloys = alloys.filter(alloy => 
+                Object.entries(alloy).some(([key, value]) => {
+                    const searchValue = searchTerm.toLowerCase();
+                    const stringValue = (value || '').toString().toLowerCase();
 
-        return (
-          // Exact match from start of any value
-          stringValue.startsWith(searchValue)
-          // Partial match for alloy name at the start
-          || (key === "ALEACION" && stringValue.includes(searchValue))
-        );
-      })
-    );
-  }, [searchTerm, alloys]);
+                    return (
+                        stringValue.startsWith(searchValue) ||
+                        (key === 'ALEACION' && stringValue.includes(searchValue))
+                    );
+                })
+            );
 
-  return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>🔬 Aluminum Alloy Explorer</h1>
-      <input
-        type="text"
-        placeholder="Search alloys (e.g. 1030, 99.30, max)"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={styles.searchInput}
-      />
-      {searchTerm && filteredAlloys.length > 0
-        ? (
-          <table style={styles.alloyTable}>
-            <thead>
-              <tr>
-                {alloys.length > 0 && Object.keys(alloys[0]).map((header, index) => (
-                  <th
-                    key={header}
-                    style={{
-                      ...styles.tableHeader,
-                      width: styles.columnWidths[index] || "auto",
-                    }}
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAlloys.map((alloy, index) => (
-                <tr key={index} style={styles.tableRow}>
-                  {Object.values(alloy).map((value, colIndex) => (
-                    <td
-                      key={colIndex}
-                      style={{
-                        ...styles.tableCell,
-                        width: styles.columnWidths[colIndex] || "auto",
-                        textAlign: colIndex === 0 ? "left" : "center",
-                      }}
-                    >
-                      {value || "-"}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )
-        : (
-          searchTerm && (
-            <div style={styles.notFoundMessage}>
-              🔍 Not found in database
-            </div>
-          )
-        )}
-    </div>
-  );
-}
+            displayResults(filteredAlloys);
+        }
 
-const styles = {
-  container: {
-    maxWidth: "1000px",
-    margin: "0 auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif",
-  },
-  title: {
-    textAlign: "center",
-    color: "#333",
-    marginBottom: "20px",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "10px",
-    fontSize: "16px",
-    marginBottom: "20px",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-  },
-  columnWidths: [
-    "100px", // ALEACION
-    "120px", // Al
-    "120px", // Mg
-    "120px", // Zn
-    "120px", // Mn
-    "120px", // Cu
-    "120px", // Fe
-    "120px", // Si
-    "120px", // Ni
-  ],
-  alloyTable: {
-    width: "100%",
-    borderCollapse: "separate",
-    borderSpacing: "0",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-  tableHeader: {
-    backgroundColor: "#f4f4f4",
-    padding: "10px",
-    textAlign: "center",
-    borderBottom: "2px solid #ddd",
-    fontWeight: "bold",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  tableRow: {
-    borderBottom: "1px solid #eee",
-    height: "40px",
-  },
-  tableCell: {
-    padding: "10px",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    height: "40px",
-  },
-  notFoundMessage: {
-    textAlign: "center",
-    color: "#666",
-    padding: "20px",
-    fontSize: "18px",
-  },
-};
+        function displayResults(filteredAlloys) {
+            const resultContainer = document.getElementById('resultContainer');
+            
+            if (filteredAlloys.length === 0) {
+                resultContainer.innerHTML = \`
+                    <div class="not-found">
+                        🔍 Not found in database
+                    </div>
+                \`;
+                return;
+            }
 
-function client() {
-  createRoot(document.getElementById("root")).render(<AluminumAlloySearch />);
-}
+            const tableHeaders = Object.keys(alloys[0]);
+            
+            let tableHTML = \`
+                <table class="alloy-table">
+                    <thead>
+                        <tr>
+                            \${tableHeaders.map((header, index) => 
+                                \`<th class="column-\${header.toLowerCase()}">\${header}</th>\`
+                            ).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        \${filteredAlloys.map(alloy => \`
+                            <tr>
+                                \${Object.values(alloy).map((value, index) => 
+                                    \`<td class="column-\${tableHeaders[index].toLowerCase()}">\${value || '-'}</td>\`
+                                ).join('')}
+                            </tr>
+                        \`).join('')}
+                    </tbody>
+                </table>
+            \`;
 
-if (typeof document !== "undefined") { client(); }
+            resultContainer.innerHTML = tableHTML;
+        }
 
-export default async function server(request: Request): Promise<Response> {
-  return new Response(
-    `
-    <html>
-      <head>
-        <title>Aluminum Alloy Explorer</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-          body { margin: 0; padding: 0; }
-          * { box-sizing: border-box; }
-        </style>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script src="https://esm.town/v/std/catch"></script>
-        <script type="module" src="${import.meta.url}"></script>
-      </body>
-    </html>
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => filterAlloys(e.target.value));
+        });
+    </script>
+</body>
+</html>
   `,
     {
-      headers: { "content-type": "text/html" },
-    },
-  );
-}
+      headers: {
+        "content-type": "text/html",
+      },
+    }
